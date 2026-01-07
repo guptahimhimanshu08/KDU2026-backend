@@ -11,7 +11,7 @@ public class WarehouseAudit {
     public static void main(String[] args) {
 
         String id = "A200"; 
-
+        // figure out other ways to do this thing
         Optional<Inventory> inventoryOptional =
         Optional.ofNullable(Inventory.findItem(id));
 
