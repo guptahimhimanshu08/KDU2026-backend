@@ -18,7 +18,7 @@ public class CallableFuture{
             }
             return sum;
         };
-
+        
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         Future<Integer> future = executor.submit(sumTask);
