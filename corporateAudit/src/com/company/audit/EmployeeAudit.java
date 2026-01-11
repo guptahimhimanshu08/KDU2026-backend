@@ -9,6 +9,8 @@ public class EmployeeAudit {
             List<Employee> employees,
             Predicate<Employee> condition
     ) {
+        if(employees == null || condition == null)return List.of();
+        
         return employees.stream()
                         .filter(condition)
                         .collect(Collectors.toList());
@@ -18,6 +20,9 @@ public class EmployeeAudit {
     public static List<String> filterEmployeesByNames(
             List<Employee> employees
     ) {
+        
+        if(employees == null) return List.of();
+        
         return employees.stream()
                         .map(Employee::getName)
                         .map(String::toUpperCase)
@@ -27,6 +32,9 @@ public class EmployeeAudit {
     public static double filterEmployeesBySalary(
             List<Employee> employees
     ) {
+        
+        if(employees == null) return List.of();
+        
         return employees.stream()
                         .mapToDouble(Employee::getSalary)
                         .sum();
