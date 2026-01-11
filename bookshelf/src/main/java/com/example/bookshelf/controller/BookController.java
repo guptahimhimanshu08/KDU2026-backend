@@ -3,16 +3,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.example.bookshelf.model.Book;
 import com.example.bookshelf.service.BookService;
 import jakarta.validation.Valid;
@@ -31,19 +22,27 @@ public class BookController {
         this.bookService = bookService;
     }
 
+    @Operation(
+        summary = "Get books",
+        description = "Retrieve books with optional filtering, sorting, and pagination"
+    )
     @GetMapping
     public ResponseEntity<Page<Book>> getAllBooksSorted(
                 @RequestParam(required = false) String author,
                 @RequestParam(required = false) String sortBy,
-                @RequestParam(required = false, defaultValue = "0") int page,
+                @RequestParam(defaultValue = "asc") String sortDir,
+                @RequestParam(required = false, defaultValue = "1") int page,
                 @RequestParam(required = false, defaultValue = "10") int size) {
 
 
-            return new ResponseEntity<>(bookService.getBooks(author, sortBy, page, size), HttpStatus.OK);
+            Page<Book> books = bookService.getBooks(
+            author, sortBy, sortDir, page, size);
+
+            return new ResponseEntity.ok(books);
         
     }
 
-    @GetMapping("/books/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Book>> getBookById(@PathVariable int id){
         Book book = bookService.getBookById(id);
 
@@ -52,39 +51,47 @@ public class BookController {
             linkTo(methodOn(BookController.class).getAllBooksSorted(null, null, 0, 10)).withRel("all-books")    
         );
 
-        if(book==null)return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        else return new ResponseEntity<>(bookEntity, HttpStatus.OK);
+        return new ResponseEntity<>(bookEntity, HttpStatus.OK);
     }
-   
+    
+    @Operation(
+        summary = "Add a new book",
+        description = "Creates a new book entry in the library"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Book created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid book data"),
+        @ApiResponse(responseCode = "409", description = "Book already exists")
+    })
     @PostMapping
     public ResponseEntity<Book> addBook(@Valid @RequestBody Book book){
-        try{
-            bookService.addBook(book);
-            return new ResponseEntity<>(book, HttpStatus.CREATED);
-        }catch(Exception e){
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+      
+        Book savedBook = bookService.addBook(book);
+        return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
+        
     }
+
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateBook(@PathVariable int id , @Valid @RequestBody Book updatedBook){
-        try{
-            bookService.updateBook(id, updatedBook);
-            return new ResponseEntity<>("Book Details Updated", HttpStatus.OK);
-        }catch(Exception e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<Book> updateBook(@PathVariable int id , @Valid @RequestBody Book updatedBook){
+       
+        Book saved = bookService.updateBook(id, updatedBook);
+
+        return new ResponseEntity<>(saved, HttpStatus.OK);
+       
     }
 
+    @Operation(
+        summary = "Delete a book",
+        description = "Deletes a book. Only ADMIN users are allowed."
+    )
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteBook(@PathVariable int id){
-        boolean deleted = bookService.deleteBook(id);
+    public ResponseEntity<Void> deleteBook(@PathVariable int id){
 
-        if (!deleted) {
-            return ResponseEntity.notFound().build();
-        }
+        bookService.deleteBook(id);
 
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity.noContent().build();
 
     }
 

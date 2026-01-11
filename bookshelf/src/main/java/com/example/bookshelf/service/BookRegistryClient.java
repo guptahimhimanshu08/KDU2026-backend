@@ -23,19 +23,25 @@ public class BookRegistryClient {
 
     public String fetchBookCover(String author) {
 
-        System.out.println("Calling external registry for author: " + author);
+        LoggerFactory.getLogger(BookRegistryClient.class).info("Calling external registry for author: " + author);
 
         return webClient
                 .get()
-                .uri("https://httpstat.us/503") 
+                .uri("/cover?author={author}", author) 
                 .retrieve()
+                .onStatus(
+                    status -> status.is5xxServerError(),
+                    response -> Mono.error(
+                        new RegistryUnavailableException("Registry unavailable")
+                    )
+                )
                 .bodyToMono(String.class)
                 .block(); 
     }
 
     @Recover
     public String recover(RuntimeException ex, String author) {
-        System.out.println("Registry unavailable. Falling back.");
+
         return "DEFAULT_COVER_IMAGE";
     }
 }

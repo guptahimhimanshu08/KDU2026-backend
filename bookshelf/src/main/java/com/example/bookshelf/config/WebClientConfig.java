@@ -11,6 +11,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 
 @Configuration
 public class WebClientConfig {
+
     @Bean
     public WebClient webClient() {
 
@@ -18,6 +19,7 @@ public class WebClientConfig {
                 .responseTimeout(Duration.ofSeconds(3));
 
         return WebClient.builder()
+                .baseUrl("https://mock-registry.com")
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }

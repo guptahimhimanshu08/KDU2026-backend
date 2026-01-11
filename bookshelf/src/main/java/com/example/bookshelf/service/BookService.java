@@ -14,6 +14,8 @@ public class BookService {
     
     private final BookRepository bookRepository;
     private final BookRegistryClient registryClient;
+    private static final Logger log =
+            LoggerFactory.getLogger(BookService.class);
 
     @Autowired
     public BookService(BookRepository bookRepository, BookRegistryClient registryClient) {
@@ -24,26 +26,43 @@ public class BookService {
     
     public Book getBookWithCover(int id) {
 
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+        Book book = getBookById(id);
 
-        String coverImage = registryClient.fetchBookCover("dummy-author");
+        String cover = registryClient.fetchBookCover(book.getAuthor());
 
-        System.out.println("Cover Image: " + coverImage);
-
+        book.setCoverImage(cover);
         return book;
     }
     
-    public Page<Book> getBooks(String author, String sortBy, int page, int size){
+    public Page<Book> getBooks(String author, String sortBy,String sortDir, int page, int size){
         
-        Sort sort = Sort.by("title");
-        if(sortBy != null ){
-            sort = Sort.by(sortBy);
+        if (page < 0) {
+            throw new InvalidPaginationException("Page index must not be negative");
+        }
+        
+        
+        if (size <= 0 || size > 50) {
+            throw new InvalidPaginationException("Page size must be between 1 and 50");
         }
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Sort.Direction direction =
+            sortDir.equalsIgnoreCase("desc")
+                    ? Sort.Direction.DESC
+                    : Sort.Direction.ASC;
+
+        if (!List.of("title").contains(sortBy)) {
+            throw new InvalidSortException("Sorting by " + sortBy + " is not allowed");
+        }
+
+        int pageIndex = page - 1;
+
+        if (pageIndex < 0) {
+            throw new InvalidPaginationException("Page number must be >= 1");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
-        // Filter by author
+        
         if (author != null && !author.isBlank()) {
             return bookRepository.findByAuthor(author, pageable);
         }
@@ -53,26 +72,59 @@ public class BookService {
 
     public Book getBookById(int id){
         return bookRepository.findById(id)
-         .orElseThrow(() -> new RuntimeException("Book not found"));
+         .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + id));
     }
 
+    @Transactional
     public Book addBook(Book book){
-        return bookRepository.save(book);
+
+        if(book == null){
+            throw new InvalidBookException("Book must not be null");
+        }
+
+        try{
+            Book saved =  bookRepository.save(book);
+
+            log.info("New book added successfully: id={}, title='{}', author='{}'",
+                saved.getId(),
+                saved.getTitle(),
+                saved.getAuthor());
+
+            return saved;
+
+        }catch(DataIntegrityViolationException ex){
+
+            throw new BookAlreadyExistsException("Book already exists", ex);
+        }
     }
     
-    public Book updateBook(int id, Book updatedBook) {
+    @Transactional
+    public Book updateBook(long id, Book updatedBook) {
 
-        updatedBook.setId(id);
-        return bookRepository.save(updatedBook);
+        if (updatedBook == null) {
+            throw new InvalidBookException("Book must not be null");
+        }
+
+        Book existing = bookRepository.findById(id)
+            .orElseThrow(() ->
+                new BookNotFoundException("Book not found with id: " + id)
+            );
+        
+        existing.setTitle(updatedBook.getTitle());
+        existing.setAuthor(updatedBook.getAuthor());
+
+        return bookRepository.save(existing);
         
     }
 
-    public boolean deleteBook(int id){
-        if (!bookRepository.existsById(id)) {
-            return false;
-        }
-        bookRepository.deleteById(id);
-        return true;
+    @Transactional
+    public void deleteBook(int id){
+
+        Book book = bookRepository.findById(id)
+            .orElseThrow(() ->
+                new BookNotFoundException("Book not found with id: " + id)
+            );
+        bookRepository.deleteById(book);
     }
 
 }
