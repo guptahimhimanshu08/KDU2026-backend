@@ -26,7 +26,7 @@ public class MessageQueue {
             return messageQueue.poll();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return null;
+            log.warn("Consumer interrupted, shutting down");
         } finally {
             lock.unlock();
         }

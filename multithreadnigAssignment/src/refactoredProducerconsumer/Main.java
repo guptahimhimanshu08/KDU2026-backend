@@ -17,7 +17,19 @@ public class Main {
 
         producers.shutdown();
         consumers.shutdown();
-        queue.clear();
         
+        try {
+            if (!producers.awaitTermination(10, TimeUnit.SECONDS)) {
+                producers.shutdownNow();
+            }
+
+            if (!consumers.awaitTermination(10, TimeUnit.SECONDS)) {
+                consumers.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            producers.shutdownNow();
+            consumers.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
