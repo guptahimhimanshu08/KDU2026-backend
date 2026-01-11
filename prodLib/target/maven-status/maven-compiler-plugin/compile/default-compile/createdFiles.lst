@@ -1,0 +1,11 @@
+com\kickdrum\prodLib\advice\GlobalExceptionHandler.class
+com\kickdrum\prodLib\model\Book.class
+com\kickdrum\prodLib\ProdLibApplication.class
+com\kickdrum\prodLib\service\BookService.class
+com\kickdrum\prodLib\controller\AnalyticsController.class
+com\kickdrum\prodLib\config\SwaggerConfig.class
+com\kickdrum\prodLib\config\ExecutorConfig.class
+com\kickdrum\prodLib\controller\BookController.class
+com\kickdrum\prodLib\config\SecurityConfig.class
+com\kickdrum\prodLib\exception\BookNotFoundException.class
+com\kickdrum\prodLib\repository\BookRepository.class
