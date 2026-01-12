@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Warehouse Management API
+  version: v1
+  description: API contract for managing packages
+
+paths:
+  /api/v1/packages:
+    put:
+      summary: Update a package
+      description: |
+        Updates an existing package.
+        This operation is idempotent.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackageRequest"
+      responses:
+        "200":
+          description: Package updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageResponse"
+        "400":
+          description: Invalid input
+        "404":
+          description: Package not found
+        "409":
+          description: Conflict while updating package
+
+components:
+  schemas:
+    UpdatePackageRequest:
+      type: object
+      required:
+        - destination
+        - weight
+        - status
+        - deliveryType
+      properties:
+        destination:
+          type: string
+          example: "123 Main St, Springfield, IL 62701"
+        weight:
+          type: number
+          format: double
+          example: 5.5
+        status:
+          type: string
+          example: "PENDING"
+        deliveryType:
+          type: string
+          example: "EXPRESS"
+
+    PackageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        destination:
+          type: string
+          example: "123 Main St, Springfield, IL 62701"
+        weight:
+          type: number
+          format: double
+          example: 5.5
+        status:
+          type: string
+          example: "PENDING"
+        deliveryType:
+          type: string
+          example: "EXPRESS"
