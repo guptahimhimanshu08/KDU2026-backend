@@ -1,4 +1,5 @@
 package com.kickdrum.talent_portal.config;
+import com.kickdrum.talent_portal.security.CustomAuthenticationEntryPoint;
 import com.kickdrum.talent_portal.security.filter.JwtAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -20,12 +21,15 @@ public class SecurityConfig {
     
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthEntryPoint;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
-                        CustomAccessDeniedHandler accessDeniedHandler   
+                        CustomAccessDeniedHandler accessDeniedHandler,
+                        CustomAuthenticationEntryPoint customAuthEntryPoint   
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.customAuthEntryPoint = customAuthEntryPoint;
     }
 
     @Bean
@@ -39,6 +43,7 @@ public class SecurityConfig {
             )
 
             .authorizeHttpRequests(auth -> auth
+
                 .requestMatchers("/auth/login").permitAll()
                 .anyRequest().authenticated()
             )
@@ -46,7 +51,9 @@ public class SecurityConfig {
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .exceptionHandling(exception -> 
-                exception.accessDeniedHandler(accessDeniedHandler)
+                exception
+                .accessDeniedHandler(accessDeniedHandler)
+                .customAuthEntryPoint(customAuthEntryPoint)
             )
             .addFilterBefore(
                 jwtAuthenticationFilter,

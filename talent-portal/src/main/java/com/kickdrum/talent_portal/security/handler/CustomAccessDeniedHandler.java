@@ -25,18 +25,22 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
             AccessDeniedException accessDeniedException
     ) throws IOException {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        log.warn(
+            "Access denied: user attempted forbidden operation. URI={}",
+            request.getRequestURI()
+        );
 
-        if (authentication != null) {
-            log.warn(
-                "Forbidden access attempt by user '{}' with roles {} on endpoint '{}'",
-                authentication.getName(),
-                authentication.getAuthorities(),
-                request.getRequestURI()
-            );
-        }
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
 
-        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+        Map<String, Object> body = Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 403,
+                "error", "Forbidden",
+                "message", "You do not have permission to perform this action",
+                "path", request.getRequestURI()
+        );
+
+        response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }
